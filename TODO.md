@@ -6,4 +6,12 @@ Auto Import Class: option+commend+u or option+commend+n
 [x]  Seed the initial tags
 [x]  Prepare models
 [x]  Prepare Factories
-[]  Prepare resources
+[x]  Prepare resources
+[x]  Tags
+        - Routes
+        - Controller
+        - Tests
+[]  Offices
+        - List Offices
+        - Read Office
+        - Create Office
