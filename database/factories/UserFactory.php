@@ -5,6 +5,7 @@ namespace Database\Factories;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Hash;
 
 class UserFactory extends Factory
 {
@@ -23,7 +24,7 @@ class UserFactory extends Factory
     public function definition()
     {
         return [
-            'email'                => $preg_replace('/@example\..*/', '@educo.test', $this->faker->unique()->safeEmail),
+            'email'                => preg_replace('/@example\..*/', '@educo.test', $this->faker->unique()->safeEmail),
             'user_uid'             => $this->faker->unique()->ean8(),
             'must_change_password' => False,
             'status'               => 1,

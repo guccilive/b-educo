@@ -12,6 +12,18 @@ Auto Import Class: option+commend+u or option+commend+n
         - Controller
         - Tests
 []  Offices
-        - List Offices
-        - Read Office
-        - Create Office
+        - List Offices endpoint
+            [x]  Show only approved and visible records
+            [x]  Filter by hosts
+            [x]  Filter by users
+            [x]  Include tags, images and user
+            []  Show count of previous reservations
+            [x]  Paginate
+            []  Sort by distance if lng/lat provided, Otherwise oldest first
+        - Show Office endpoint
+            []  Show count of previous reservations
+            []  Include tags, images and user
+        - Create Office endpoint
+            []  Host must be authenticated and email verified
+            []  Cannot fill 'approval_status'
+            []  Attach photos to offices endpoint

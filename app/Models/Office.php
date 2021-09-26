@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use App\Models\Reservation;
 use App\Models\User;
 use App\Models\Image;
@@ -31,16 +32,21 @@ class Office extends Model
 
     public function user(): BelongsTo
     {
-      return $this->belongsTo(User::class)
+      return $this->belongsTo(User::class);
     }
 
     public function reservations(): HasMany
     {
-      return $this->hasMany(Reservation::class)
+      return $this->hasMany(Reservation::class);
     }
 
     public function images(): MorphMany
     {
       return $this->morphMany(Image::class, 'resource');
+    }
+
+    public function tags(): BelongsToMany
+    {
+      return $this->belongsToMany(Tag::class, 'offices_tags');
     }
 }

@@ -17,12 +17,12 @@ class CreateOfficesTable extends Migration
             $table->id();
             $table->foreignId('user_id')->index();
             $table->string('title');
-            $table->string('description');
+            $table->text('description');
             $table->decimal('lat', 11, 8);
             $table->decimal('lng', 11, 8);
             $table->text('address_line1');
             $table->text('address_line2')->nullable();
-            $table->tinyInteger('approved_status')->default(1);
+            $table->tinyInteger('approval_status')->default(1);
             $table->boolean('hidden')->default(false);
             $table->integer('price_per_day');
             $table->integer('monthly_discount')->default(0);

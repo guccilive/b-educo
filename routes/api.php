@@ -18,4 +18,9 @@ use Illuminate\Support\Facades\Route;
 //     return $request->user();
 // });
 
+// Tags
 Route::get('/tags', \App\Http\Controllers\API\TagController::class);
+
+
+// Offices
+Route::get('/offices', [\App\Http\Controllers\API\OfficeController::class, 'index']);
