@@ -19,7 +19,7 @@ Auto Import Class: option+commend+u or option+commend+n
             [x]  Include tags, images and user
             [x]  Show count of previous reservations
             [x]  Paginate
-            []  Sort by distance if lng/lat provided, Otherwise oldest first
+            [x]  Sort by distance if lng/lat provided, Otherwise oldest first
         - Show Office endpoint
             []  Show count of previous reservations
             []  Include tags, images and user
