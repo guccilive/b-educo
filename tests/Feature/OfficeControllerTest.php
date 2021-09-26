@@ -171,4 +171,30 @@ class OfficeControllerTest extends TestCase
        $this->assertEquals('Luton', $response->json('data')[1]['title']);
 
      }
+
+     /**
+      * @test
+      */
+      public function test_returns_a_single_office()
+      {
+        $user = User::factory()->create();
+        $tag = Tag::factory()->create();
+        $office = Office::factory()->for($user)->create();
+
+        $office->tags()->attach($tag);
+        $office->images()->create(['path' => 'test_image.png']);
+
+        Reservation::factory()->for($office)->create(['status' => Reservation::STATUS_ACTIVE]); // We are expecting to return this reservation
+        Reservation::factory()->for($office)->create(['status' => Reservation::STATUS_CANCELLED]); // Not epecting to return this reservation
+
+        $response = $this->get('/api/offices/'.$office->id);
+        $response->assertOk();
+
+        $this->assertEquals(1, $response->json('data')['reservations_count']);
+        $this->assertIsArray($response->json('data')['tags']);
+        $this->assertCount(1, $response->json('data')['tags']); // We are expecting only one tags in the array
+        $this->assertIsArray($response->json('data')['images']);
+        $this->assertCount(1, $response->json('data')['images']);// We are expecting only one imades in the array
+        $this->assertEquals($user->id, $response->json('data')['user']['id']);
+      }
 }
