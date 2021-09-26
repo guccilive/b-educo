@@ -135,4 +135,40 @@ class OfficeControllerTest extends TestCase
       $this->assertEquals(1, $response->json('data')[0]['reservations_count']);
 
     }
+
+
+    /**
+     * @test
+     */
+     public function test_returns_office_ordered_by_distance_when_coordinates_are_provided()
+     {
+
+       // The farest office
+       $office1 = Office::factory()->create([
+         'lat' => '52.64120885327593',
+         'lng' => '-1.11115359442758',
+         'title' => 'Leicester'
+       ]);
+
+       // The nearest office
+       $office2 = Office::factory()->create([
+         'lat' => '51.88251871561174',
+         'lng' => '-0.42793612379441487',
+         'title' => 'Luton'
+       ]);
+
+       // If latitude and longetude are provided, we will expect to order by the nearest offfice
+       $response = $this->get('/api/offices?lat=51.495784636352475&lng=-0.1758245173622218ß');
+       // $response->dump();
+       $response->assertOk();
+       $this->assertEquals('Luton', $response->json('data')[0]['title']);
+       $this->assertEquals('Leicester', $response->json('data')[1]['title']);
+
+       // If latitude and longetude are not provided, we will expect to order by the oldest office in DB
+       $response = $this->get('/api/offices');
+       $response->assertOk();
+       $this->assertEquals('Leicester', $response->json('data')[0]['title']);
+       $this->assertEquals('Luton', $response->json('data')[1]['title']);
+
+     }
 }
