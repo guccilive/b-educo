@@ -24,6 +24,7 @@ class OfficeControllerTest extends TestCase
       $response = $this->get('/api/offices');
 
       // $response->dump();
+      
       $response->assertOk();
       $response->assertJsonCount(3, 'data');
       $this->assertNotNull($response->json('data')[0]['id']);
@@ -54,7 +55,7 @@ class OfficeControllerTest extends TestCase
     /**
      * @test
      */
-    public function test_filters_by_hostID()
+    public function test_filters_by_userID()
     {
       Office::factory(3)->create();
 
@@ -62,7 +63,7 @@ class OfficeControllerTest extends TestCase
 
       $office = Office::factory()->for($host)->create();
 
-      $response = $this->get('/api/offices?host_id='.$host->id);
+      $response = $this->get('/api/offices?user_id='.$host->id);
 
       // $response->dump();
       $response->assertOk();
@@ -73,7 +74,7 @@ class OfficeControllerTest extends TestCase
     /**
      * @test
      */
-    public function test_filters_by_userID() // Filter by user who placed reservation
+    public function test_filters_by_visitorID() // Filter by user who placed reservation
     {
       Office::factory(3)->create();
 
@@ -83,7 +84,7 @@ class OfficeControllerTest extends TestCase
       Reservation::factory()->for(Office::factory())->create(); // This reservation shouldn't be returned
       Reservation::factory()->for($office)->for($user)->create(); // Only this recervation should be returned
 
-      $response = $this->get('/api/offices?user_id='.$user->id);
+      $response = $this->get('/api/offices?visitor_id='.$user->id);
 
       // $response->dump();
       $response->assertOk();
@@ -188,6 +189,7 @@ class OfficeControllerTest extends TestCase
         Reservation::factory()->for($office)->create(['status' => Reservation::STATUS_CANCELLED]); // Not epecting to return this reservation
 
         $response = $this->get('/api/offices/'.$office->id);
+
         $response->assertOk();
 
         $this->assertEquals(1, $response->json('data')['reservations_count']);

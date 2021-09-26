@@ -24,8 +24,8 @@ class UserFactory extends Factory
     public function definition()
     {
         return [
+            'name'                 => $this->faker->name,
             'email'                => preg_replace('/@example\..*/', '@educo.test', $this->faker->unique()->safeEmail),
-            'user_uid'             => $this->faker->unique()->ean8(),
             'must_change_password' => False,
             'status'               => 1,
             'email_verified_at'    => now(),

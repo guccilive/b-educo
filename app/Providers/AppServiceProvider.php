@@ -4,6 +4,8 @@ namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\Relation;
+use App\Models\Office;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -25,5 +27,13 @@ class AppServiceProvider extends ServiceProvider
     public function boot()
     {
       Model::unguard(); // Disable mass assignment in all models of the app.
+
+      /**
+      *Customizind MorphMap
+      * Instead of <<App/Models/Office>>, we will have <<office>>
+      */
+      Relation::enforceMorphMap([
+        'office' => Office::class
+      ]);
     }
 }
