@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Models\Image;
 use App\Models\Office;
 use App\Models\Reservation;
+use Laravel\Sanctum\Sanctum;
 
 class OfficeControllerTest extends TestCase
 {
@@ -24,7 +25,7 @@ class OfficeControllerTest extends TestCase
       $response = $this->get('/api/offices');
 
       // $response->dump();
-      
+
       $response->assertOk();
       $response->assertJsonCount(3, 'data');
       $this->assertNotNull($response->json('data')[0]['id']);
@@ -190,6 +191,8 @@ class OfficeControllerTest extends TestCase
 
         $response = $this->get('/api/offices/'.$office->id);
 
+        $response->dump();
+
         $response->assertOk();
 
         $this->assertEquals(1, $response->json('data')['reservations_count']);
@@ -198,5 +201,59 @@ class OfficeControllerTest extends TestCase
         $this->assertIsArray($response->json('data')['images']);
         $this->assertCount(1, $response->json('data')['images']);// We are expecting only one imades in the array
         $this->assertEquals($user->id, $response->json('data')['user']['id']);
+      }
+
+      /*
+      * @test
+      */
+      public function test_create_new_office()
+      {
+        $user = User::factory()->createQuietly();
+
+        $tag1 = Tag::factory()->create();
+        $tag2 = Tag::factory()->create();
+
+        $this->actingAs($user);
+
+        $response = $this->postJson('/api/offices', [
+          'title' => 'Educo Kinshasa Office',
+          'description' => 'The Office is so big that noone can aforde it. Just let me kmow manager!',
+          'lat' => '52.64120885327593',
+          'lng' => '-1.11115359442758',
+          'address_line1' => 'Address of the office',
+          'price_per_day' => 10_000,
+          'monthly_discount' => 5,
+          'tags' => [
+            $tag1->id, $tag2->id
+          ]
+
+        ]);
+
+        // dd($response->json());
+
+        $response->assertCreated()
+                 ->assertJsonPath('data.title', 'Educo Kinshasa Office')
+                 ->assertJsonPath('data.approval_status', Office::APPROVAL_PENDING)
+                 ->assertJsonPath('data.user.id', $user->id)
+                 ->assertJsonCount(2, 'data.tags');
+
+         $this->assertDatabaseHas('offices', [
+             'id' => $response->json('data.id')
+         ]);
+      }
+
+
+      /*
+      * @test
+      */
+      public function test_not_allowing_creating_new_office_if_scope_is_not_provided()
+      {
+        $user = User::factory()->createQuietly();
+
+        Sanctum::actingAs($user, []);
+
+       $response = $this->postJson('/api/offices');
+
+        $response->assertForbidden();
       }
 }
