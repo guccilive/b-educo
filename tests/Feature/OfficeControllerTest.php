@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
+use Illuminate\Http\Response;
 use Tests\TestCase;
 use App\Models\Tag;
 use App\Models\User;
@@ -191,7 +192,7 @@ class OfficeControllerTest extends TestCase
 
         $response = $this->get('/api/offices/'.$office->id);
 
-        $response->dump();
+        // $response->dump();
 
         $response->assertOk();
 
@@ -248,12 +249,62 @@ class OfficeControllerTest extends TestCase
       */
       public function test_not_allowing_creating_new_office_if_scope_is_not_provided()
       {
-        $user = User::factory()->createQuietly();
+        $user = User::factory()->create();
 
-        Sanctum::actingAs($user, []);
+        Sanctum::actingAs($user, ['office.create']);
 
        $response = $this->postJson('/api/offices');
 
-        $response->assertForbidden();
+        $this->assertNotEquals(Response::HTTP_FORBIDDEN, $response->status());
+      }
+
+      /*
+      * @test
+      */
+      public function test_update_existing_office()
+      {
+        $user = User::factory()->create();
+        $tags = Tag::factory(4)->create();
+        $anotherTag = Tag::factory()->create();
+        $office = Office::factory()->for($user)->create();
+
+        $office->tags()->attach($tags);
+
+        $this->actingAs($user);
+
+        $response = $this->putJson('/api/offices/'.$office->id, [
+          'title' => 'Educo Minneapolis US Office',
+          'tags'  => [ $tags[0]->id, $anotherTag->id ]
+
+        ]);
+
+        // dd($response->json());
+
+        $response->assertOk()
+                 ->assertJsonCount(2, 'data.tags')
+                 ->assertJsonPath('data.tags.0.id', $tags[0]->id) // To make sure the tag we have on db are exactly this one
+                 ->assertJsonPath('data.tags.1.id', $anotherTag->id) // and this one
+                 ->assertJsonPath('data.title', 'Educo Minneapolis US Office');
+      }
+
+      /*
+      * @test
+      */
+      public function test_cannot_update_office_belongs_to_other_user()
+      {
+        $user = User::factory()->create();
+        $otherUser = User::factory()->create();
+        $office = Office::factory()->for($otherUser)->create();
+
+        $this->actingAs($user);
+
+        $response = $this->putJson('/api/offices/'.$office->id, [
+          'title' => 'Educo Minneapolis US Office'
+
+        ]);
+
+        // dd($response->status());
+
+        $response->assertStatus(Response::HTTP_FORBIDDEN);
       }
 }

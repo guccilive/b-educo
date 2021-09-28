@@ -26,3 +26,4 @@ Route::get('/tags', \App\Http\Controllers\API\TagController::class);
 Route::get('/offices', [\App\Http\Controllers\API\OfficeController::class, 'index']);
 Route::get('/offices/{office}', [\App\Http\Controllers\API\OfficeController::class, 'show']);
 Route::post('/offices', [\App\Http\Controllers\API\OfficeController::class, 'create'])->middleware(['auth:sanctum', 'verified']);
+Route::PUT('/offices/{office}', [\App\Http\Controllers\API\OfficeController::class, 'update'])->middleware(['auth:sanctum', 'verified']);
