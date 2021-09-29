@@ -5,12 +5,14 @@ namespace Tests\Feature;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
 use App\Models\Tag;
 use App\Models\User;
 use App\Models\Image;
 use App\Models\Office;
 use App\Models\Reservation;
+use App\Notifications\OfficePendingApprovalNotification;
 use Laravel\Sanctum\Sanctum;
 
 class OfficeControllerTest extends TestCase
@@ -209,7 +211,13 @@ class OfficeControllerTest extends TestCase
       */
       public function test_create_new_office()
       {
+        $admin = User::factory()->create([
+          'name' => 'Amelia Karamelka'
+        ]);
+
         $user = User::factory()->createQuietly();
+
+        Notification::fake();
 
         $tag1 = Tag::factory()->create();
         $tag2 = Tag::factory()->create();
@@ -241,6 +249,8 @@ class OfficeControllerTest extends TestCase
          $this->assertDatabaseHas('offices', [
              'id' => $response->json('data.id')
          ]);
+
+         Notification::assertSentTo($admin, OfficePendingApprovalNotification::class);
       }
 
 
@@ -292,9 +302,9 @@ class OfficeControllerTest extends TestCase
       */
       public function test_cannot_update_office_belongs_to_other_user()
       {
-        $user = User::factory()->create();
+        $user      = User::factory()->create();
         $otherUser = User::factory()->create();
-        $office = Office::factory()->for($otherUser)->create();
+        $office    = Office::factory()->for($otherUser)->create();
 
         $this->actingAs($user);
 
@@ -306,5 +316,80 @@ class OfficeControllerTest extends TestCase
         // dd($response->status());
 
         $response->assertStatus(Response::HTTP_FORBIDDEN);
+      }
+
+
+      /*
+      * @test
+      * Set the Aproval Status ot the office to Pending if
+      * one the params below changed for admin reviews
+      * ['lat','lng', 'price_per_date']
+      */
+      public function test_maks_office_as_pending_if_isDirty()
+      {
+        $admin = User::factory()->create([
+          'name' => 'Amelia Karamelka'
+        ]);
+
+        Notification::fake();
+
+        $user   = User::factory()->create();
+        $office = Office::factory()->for($user)->create();
+
+        $this->actingAs($user);
+
+        $response = $this->putJson('/api/offices/'.$office->id, [
+          'lat' => 20.64120885327593
+
+        ]);
+
+        $response->assertOk();
+
+        $this->assertDatabaseHas('offices', [
+          'id'              =>  $office->id,
+          'approval_status' =>  Office::APPROVAL_PENDING,
+        ]);
+
+        Notification::assertSentTo($admin, OfficePendingApprovalNotification::class);
+      }
+
+
+      /*
+      *@test
+      */
+      public function test_user_can_delete_offices()
+      {
+        $user      = User::factory()->create();
+        $office    = Office::factory()->for($user)->create();
+
+        $this->actingAs($user);
+
+        $response = $this->delete('/api/offices/'.$office->id);
+
+        $response->assertOk();
+
+        $this->AssertSoftDeleted($office);
+      }
+
+      /*
+      *@test
+      */
+      public function test_user_cannot_delete_offices_that_as_reservations()
+      {
+        $user      = User::factory()->create();
+        $office    = Office::factory()->for($user)->create();
+
+        Reservation::factory(3)->for($office)->create();
+
+        $this->actingAs($user);
+
+        $response = $this->deleteJson('/api/offices/'.$office->id);
+
+        $response->assertStatus(Response::HTTP_UNPROCESSABLE_ENTITY); // 422 Http error
+
+        $this->assertDatabaseHas('offices', [
+          'id'  =>  $office->id,
+          'deleted_at'  => null,
+        ]);
       }
 }

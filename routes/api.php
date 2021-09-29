@@ -19,11 +19,12 @@ use Illuminate\Support\Facades\Route;
 // });
 
 // Tags
-Route::get('/tags', \App\Http\Controllers\API\TagController::class);
+Route::GET('/tags', \App\Http\Controllers\API\TagController::class);
 
 
 // Offices
-Route::get('/offices', [\App\Http\Controllers\API\OfficeController::class, 'index']);
-Route::get('/offices/{office}', [\App\Http\Controllers\API\OfficeController::class, 'show']);
-Route::post('/offices', [\App\Http\Controllers\API\OfficeController::class, 'create'])->middleware(['auth:sanctum', 'verified']);
+Route::GET('/offices', [\App\Http\Controllers\API\OfficeController::class, 'index']);
+Route::GET('/offices/{office}', [\App\Http\Controllers\API\OfficeController::class, 'show']);
+Route::POST('/offices', [\App\Http\Controllers\API\OfficeController::class, 'create'])->middleware(['auth:sanctum', 'verified']);
 Route::PUT('/offices/{office}', [\App\Http\Controllers\API\OfficeController::class, 'update'])->middleware(['auth:sanctum', 'verified']);
+Route::DELETE('/offices/{office}', [\App\Http\Controllers\API\OfficeController::class, 'delete'])->middleware(['auth:sanctum', 'verified']);
