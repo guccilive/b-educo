@@ -59,6 +59,31 @@ class OfficeControllerTest extends TestCase
     /**
      * @test
      */
+    public function test_returns_offices_include_unapproved_and_hidden_if_filtering_for_current_logged_in_user()
+    {
+      $user = User::factory()->create();
+
+      Office::factory(3)->for($user)->create();
+
+      Office::factory()->for($user)->create(['hidden' => true]);
+      Office::factory()->for($user)->create(['approval_status' => Office::APPROVAL_PENDING]);
+
+      $this->actingAs($user);
+
+      $response = $this->get('/api/offices?user_id='.$user->id);
+
+
+      // $response->dump();
+      $response->assertOk();
+      $response->assertJsonCount(5, 'data');
+      $this->assertNotNull($response->json('data')[0]['id']);
+      $this->assertNotNull($response->json('meta'));
+      $this->assertNotNull($response->json('links'));
+    }
+
+    /**
+     * @test
+     */
     public function test_filters_by_userID()
     {
       Office::factory(3)->create();
@@ -211,9 +236,7 @@ class OfficeControllerTest extends TestCase
       */
       public function test_create_new_office()
       {
-        $admin = User::factory()->create([
-          'name' => 'Amelia Karamelka'
-        ]);
+        $admin = User::factory()->create(['is_admin' => true]);
 
         $user = User::factory()->createQuietly();
 
@@ -327,9 +350,7 @@ class OfficeControllerTest extends TestCase
       */
       public function test_maks_office_as_pending_if_isDirty()
       {
-        $admin = User::factory()->create([
-          'name' => 'Amelia Karamelka'
-        ]);
+        $admin = User::factory()->create(['is_admin' => true]);
 
         Notification::fake();
 
@@ -351,6 +372,51 @@ class OfficeControllerTest extends TestCase
         ]);
 
         Notification::assertSentTo($admin, OfficePendingApprovalNotification::class);
+      }
+
+      /*
+      * @test
+      */
+      public function test_update_the_featured_image_of_an_office()
+      {
+        $user = User::factory()->create();
+        $office = Office::factory()->for($user)->create();
+
+        $image = $office->images()->create(['path' => 'Test_Image.png']);
+
+        $this->actingAs($user);
+
+        $response = $this->putJson('/api/offices/'.$office->id, [
+          'featured_image_id' => $image->id,
+        ]);
+
+        // dd($response->json());
+
+        $response->assertOk()
+                 ->assertJsonPath('data.featured_image_id', $image->id);
+      }
+
+      /*
+      * @test
+      */
+      public function test_does_not_update_the_featured_image_belongsTo_another_office()
+      {
+        $user = User::factory()->create();
+        $office = Office::factory()->for($user)->create();
+        $office2 = Office::factory()->for($user)->create();
+
+        $image = $office2->images()->create(['path' => 'Test_Image.png']);
+
+        $this->actingAs($user);
+
+        $response = $this->putJson('/api/offices/'.$office->id, [
+          'featured_image_id' => $image->id,
+        ]);
+
+        // dd($response->json());
+
+        $response->assertStatus(Response::HTTP_UNPROCESSABLE_ENTITY)// 422 Http errorß
+                 ->assertInvalid('featured_image_id');
       }
 
 
