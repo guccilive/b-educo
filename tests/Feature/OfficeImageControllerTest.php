@@ -20,7 +20,7 @@ class OfficeImageControllerTest extends TestCase
     public function test_uploade_office_image()
     {
 
-        Storage::fake('public');
+        Storage::fake();
 
         $user = User::factory()->create();
         $office = Office::factory()->for($user)->create();
@@ -35,11 +35,9 @@ class OfficeImageControllerTest extends TestCase
 
         $response->assertCreated();
 
-        Storage::disk('public')->assertExists([
+        Storage::assertExists([
           $response->json('data.path')
         ]);
-
-        // Storage::fake('public');
     }
 
     /**
@@ -47,7 +45,7 @@ class OfficeImageControllerTest extends TestCase
      */
     public function test_delete_an_office_image()
     {
-        Storage::disk('public')->put('Office_Image.png', 'empty');
+        Storage::put('Office_Image.png', 'empty');
 
         $user = User::factory()->create();
         $office = Office::factory()->for($user)->create();
@@ -69,7 +67,7 @@ class OfficeImageControllerTest extends TestCase
 
         $this->assertModelMissing($image);
 
-        Storage::disk('public')->assertMissing('Office_Image.png');
+        Storage::assertMissing('Office_Image.png');
     }
 
     /**
@@ -124,8 +122,8 @@ class OfficeImageControllerTest extends TestCase
     public function test_cannot_delete_the_image_belong_to_another_resource()
     {
 
-        $user = User::factory()->create();
-        $office = Office::factory()->for($user)->create();
+        $user    = User::factory()->create();
+        $office  = Office::factory()->for($user)->create();
         $office2 = Office::factory()->for($user)->create();
 
         $office->images()->create([
@@ -142,6 +140,6 @@ class OfficeImageControllerTest extends TestCase
 
         $response = $this->deleteJson("/api/offices/{$office->id}/images/{$image->id}");
 
-        $response->assertStatus(Response::HTTP_UNPROCESSABLE_ENTITY); // 422 Http error
+        $response->assertNotFound();
     }
 }

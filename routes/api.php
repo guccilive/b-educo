@@ -31,4 +31,10 @@ Route::DELETE('/offices/{office}', [\App\Http\Controllers\API\OfficeController::
 
 // Office Images
 Route::POST('/offices/{office}/images', [\App\Http\Controllers\API\OfficeImageController::class, 'store'])->middleware(['auth:sanctum', 'verified']);
-Route::DELETE('/offices/{office}/images/{image}', [\App\Http\Controllers\API\OfficeImageController::class, 'delete'])->middleware(['auth:sanctum', 'verified']);
+Route::DELETE('/offices/{office}/images/{image:id}', [\App\Http\Controllers\API\OfficeImageController::class, 'delete'])->middleware(['auth:sanctum', 'verified']);
+
+// User Reservations
+Route::GET('/reservations', [\App\Http\Controllers\API\UserReservationController::class,'index'])->middleware(['auth:sanctum', 'verified']);
+
+// Host Reservations
+// Route::GET('/host/reservations', [\App\Http\Controllers\API\HostReservationController::class,'index'])->middleware(['auth:sanctum', 'verified']);

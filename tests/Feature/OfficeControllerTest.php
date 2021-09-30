@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
 use App\Models\Tag;
@@ -425,8 +426,18 @@ class OfficeControllerTest extends TestCase
       */
       public function test_user_can_delete_offices()
       {
+        Storage::put('Office_Image.png', 'empty');
+
         $user      = User::factory()->create();
         $office    = Office::factory()->for($user)->create();
+
+        $office->images()->create([
+          'path' => 'Test2_Image.jpg'
+        ]);
+
+        $image = $office->images()->create([
+          'path' => 'Office_Image.png'
+        ]);
 
         $this->actingAs($user);
 
@@ -435,6 +446,10 @@ class OfficeControllerTest extends TestCase
         $response->assertOk();
 
         $this->AssertSoftDeleted($office);
+
+        $this->assertModelMissing($image);
+
+        Storage::assertMissing('Office_Image.png');
       }
 
       /*
