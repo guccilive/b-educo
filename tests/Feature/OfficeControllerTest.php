@@ -2,7 +2,7 @@
 
 namespace Tests\Feature;
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Storage;
@@ -18,7 +18,7 @@ use Laravel\Sanctum\Sanctum;
 
 class OfficeControllerTest extends TestCase
 {
-    use RefreshDatabase;
+    use LazilyRefreshDatabase;
     /**
      * @test
      */
@@ -468,9 +468,6 @@ class OfficeControllerTest extends TestCase
 
         $response->assertStatus(Response::HTTP_UNPROCESSABLE_ENTITY); // 422 Http error
 
-        $this->assertDatabaseHas('offices', [
-          'id'  =>  $office->id,
-          'deleted_at'  => null,
-        ]);
+        $this->assertNotSoftDeleted($office);
       }
 }

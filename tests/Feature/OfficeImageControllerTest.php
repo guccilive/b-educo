@@ -2,7 +2,7 @@
 
 namespace Tests\Feature;
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Http\Response;
 use Illuminate\Http\UploadedFile;
@@ -13,7 +13,7 @@ use App\Models\Office;
 
 class OfficeImageControllerTest extends TestCase
 {
-   use RefreshDatabase;
+   use LazilyRefreshDatabase;
     /**
      *@test
      */
