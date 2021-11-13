@@ -31,4 +31,16 @@ class Reservation extends Model
     {
       return $this->belongsTo(Office::class);
     }
+
+    public function scopeBetweenDates($query, $from, $to)
+    {
+      $query->where(function ($query) use ($from, $to) {
+        $query->whereBetween('start_date', [$from, $to])
+                     ->orWhereBetween('end_date', [$from, $to])
+                     ->orWhere(function ($query) use($from, $to) {
+                       $query->where('start_date', '<', $from)
+                             ->where('end_date', '>', $to);
+                     });
+      });
+    }
 }

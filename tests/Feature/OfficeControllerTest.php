@@ -416,7 +416,7 @@ class OfficeControllerTest extends TestCase
 
         // dd($response->json());
 
-        $response->assertStatus(Response::HTTP_UNPROCESSABLE_ENTITY)// 422 Http errorß
+        $response->assertStatus(Response::HTTP_UNPROCESSABLE_ENTITY)// 422 Http error
                  ->assertInvalid('featured_image_id');
       }
 
