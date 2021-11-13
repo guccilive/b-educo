@@ -43,4 +43,10 @@ class Reservation extends Model
                      });
       });
     }
+
+    public function scopeActiveBetween($query, $from, $to)
+    {
+      $query->whereStatus(RESERVATION::STATUS_ACTIVE)
+            ->betweenDates($from, $to);
+    }
 }

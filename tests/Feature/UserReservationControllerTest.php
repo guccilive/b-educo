@@ -156,4 +156,192 @@ class UserReservationControllerTest extends TestCase
         $response->assertJsonCount(1, 'data')
                  ->assertJsonPath('data.0.office_id', $office->id);
       }
+
+      /**
+       * @test
+      */
+      public function can_make_reservation()
+      {
+        // $this->withoutExceptionHandling();
+
+        $user = User::factory()->create();
+
+        $office = Office::factory()->create([
+          'price_per_day'    => 1_000,
+          'monthly_discount' => 10,
+        ]);
+
+        $this->actingAs($user);
+
+        $response = $this->postJson(route('api.reservation.create'), [
+          'office_id' => $office->id,
+          'start_date' => now()->addDays(1),
+          'end_date' => now()->addDays(40),
+        ]);
+
+        // dd($response->json());
+
+        $response->assertCreated()
+                 ->assertJsonPath('data.price', 36000)
+                 ->assertJsonPath('data.user_id', $user->id)
+                 ->assertJsonPath('data.status', Reservation::STATUS_ACTIVE);
+
+      }
+      /**
+       * @test
+      */
+      public function cannot_make_reservation_on_non_existing_office()
+      {
+        // $this->withoutExceptionHandling();
+
+        $user = User::factory()->create();
+
+        $office = Office::factory()->for($user)->create();
+
+        $reservation = Reservation::factory(3)->for($office)->create();
+
+        $this->actingAs($user);
+
+        $response = $this->postJson(route('api.reservation.create'), [
+          'office_id' => 10000,
+          'start_date' => now()->addDays(1),
+          'end_date' => now()->addDays(40),
+        ]);
+
+        // dd($response->json());
+
+        $response->assertUnprocessable()
+                 ->assertJsonValidationErrors(['office_id' => 'Invalid Office']);
+
+      }
+
+      /**
+       * @test
+      */
+      public function cannot_make_reservation_on_his_own_office()
+      {
+        // $this->withoutExceptionHandling();
+
+        $user = User::factory()->create();
+
+        $office = Office::factory()->for($user)->create();
+
+        $this->actingAs($user);
+
+        $response = $this->postJson(route('api.reservation.create'), [
+          'office_id' => $office->id,
+          'start_date' => now()->addDays(1),
+          'end_date' => now()->addDays(40),
+        ]);
+
+        // dd($response->json());
+
+        $response->assertUnprocessable()
+                 ->assertJsonValidationErrors(['office_id' => 'You cannot make reservation on your own office.']);
+
+      }
+
+      /**
+       * @test
+      */
+      public function cannot_make_reservation_on_booked_office()
+      {
+        // $this->withoutExceptionHandling();
+
+        $user = User::factory()->create();
+
+        $fromDate = '2021-10-05';
+        $toDate   = '2021-10-06';
+
+        $office = Office::factory()->create();
+
+        Reservation::factory()->for($office)->create([
+            'start_date' => '2021-10-01',
+            'end_date'   => '2021-10-10',
+        ]);
+
+
+        $this->actingAs($user);
+
+        $response = $this->postJson(route('api.reservation.create'), [
+          'office_id'  => $office->id,
+          'start_date' => $fromDate,
+          'end_date'   => $toDate,
+        ]);
+
+        // dd($response->json());
+
+        $response->assertUnprocessable()
+                 ->assertJsonValidationErrors(['office_id' => 'You cannot make reservation during  this time.']);
+
+      }
+
+      /**
+       * @test
+      */
+      public function cannot_make_reservation_on_a_booked_office_if_the_start_date_is_before_the_booked_start_date()
+      {
+        // $this->withoutExceptionHandling();
+
+        $user = User::factory()->create();
+
+        $fromDate = '2021-10-01';
+        $toDate   = '2021-10-30';
+
+        $office = Office::factory()->create();
+
+        Reservation::factory()->for($office)->create([
+            'start_date' => '2021-10-05',
+            'end_date'   => '2021-10-10',
+        ]);
+
+
+        $this->actingAs($user);
+
+        $response = $this->postJson(route('api.reservation.create'), [
+          'office_id'  => $office->id,
+          'start_date' => $fromDate,
+          'end_date'   => $toDate,
+        ]);
+
+        // dd($response->json());
+
+        $response->assertUnprocessable()
+                 ->assertJsonValidationErrors(['office_id' => 'You cannot make reservation during  this time.']);
+
+      }
+      /**
+       * @test
+      */
+      public function cannot_make_reservation_on_a_booked_office_if_the_start_date_is_before_the_booked_start_date_and_the_end_date_is_after_the_booked_end_date()
+      {
+        // $this->withoutExceptionHandling();
+
+        $user = User::factory()->create();
+
+        $fromDate = '2021-10-01';
+        $toDate   = '2021-10-06';
+
+        $office = Office::factory()->create();
+
+        Reservation::factory()->for($office)->create([
+            'start_date' => '2021-10-05',
+            'end_date'   => '2021-10-10',
+        ]);
+
+
+        $this->actingAs($user);
+
+        $response = $this->postJson(route('api.reservation.create'), [
+          'office_id'  => $office->id,
+          'start_date' => $fromDate,
+          'end_date'   => $toDate,
+        ]);
+
+        // dd($response->json());
+
+        $response->assertUnprocessable()
+                 ->assertJsonValidationErrors(['office_id' => 'You cannot make reservation during  this time.']);
+
+      }
 }
