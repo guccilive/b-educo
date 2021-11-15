@@ -6,9 +6,8 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
-use App\Models\Office;
 
-class OfficePendingApprovalNotification extends Notification implements ShouldQueue
+class UserRervationStartingReminder extends Notification implements ShouldQueue
 {
     use Queueable;
 
@@ -17,7 +16,7 @@ class OfficePendingApprovalNotification extends Notification implements ShouldQu
      *
      * @return void
      */
-    public function __construct(public Office $office)
+    public function __construct(public Reservation $reservation)
     {
         //
     }
@@ -42,7 +41,7 @@ class OfficePendingApprovalNotification extends Notification implements ShouldQu
     public function toMail($notifiable)
     {
         return (new MailMessage)
-                    ->line('The introduction to the notification.')
+                    ->line('User reservation starting Reminder.')
                     ->action('Notification Action', url('/'))
                     ->line('Thank you for using our application!');
     }

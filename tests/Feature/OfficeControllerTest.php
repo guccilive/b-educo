@@ -125,6 +125,28 @@ class OfficeControllerTest extends TestCase
     /**
      * @test
      */
+    public function test_filter_by_tags()
+    {
+        $tags = Tag::factory(2)->create();
+
+        $office = Office::factory()->hasAttached($tags)->create();
+        Office::factory()->hasAttached($tags->first())->create();
+        Office::factory()->create();
+
+        $response = $this->get(
+            '/api/offices?'.http_build_query([
+                'tags' => $tags->pluck('id')->toArray()
+            ])
+        );
+
+        $response->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.id', $office->id);
+    }
+
+    /**
+     * @test
+     */
     public function test_returns_office_with_its_user_images_tags_relationship()
     {
       $user = User::factory()->create();
@@ -137,7 +159,6 @@ class OfficeControllerTest extends TestCase
 
       $response = $this->get('/api/offices');
 
-      // $response->dump();
       $response->assertOk();
 
       $this->assertIsArray($response->json('data')[0]['tags']);

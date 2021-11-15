@@ -5,10 +5,13 @@ namespace Tests\Feature;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
 use App\Models\User;
 use App\Models\Office;
 use App\Models\Reservation;
+use App\Notifications\NewUserReservationNotification;
+use App\Notifications\NewHostReservationNotification;
 
 class UserReservationControllerTest extends TestCase
 {
@@ -112,6 +115,8 @@ class UserReservationControllerTest extends TestCase
      */
      public function test_filter_results_by_status()
      {
+       $this->withoutExceptionHandling();
+
        $user = User::factory()->create();
 
        $reservation = Reservation::factory()->for($user)->create(['status' => Reservation::STATUS_ACTIVE]);
@@ -135,6 +140,8 @@ class UserReservationControllerTest extends TestCase
       */
       public function test_filter_results_by_office()
       {
+        // $this->withoutExceptionHandling();
+
         $user = User::factory()->create();
 
         $office = Office::factory()->create();
@@ -178,8 +185,6 @@ class UserReservationControllerTest extends TestCase
           'start_date' => now()->addDays(1),
           'end_date' => now()->addDays(40),
         ]);
-
-        // dd($response->json());
 
         $response->assertCreated()
                  ->assertJsonPath('data.price', 36000)
@@ -250,14 +255,14 @@ class UserReservationControllerTest extends TestCase
 
         $user = User::factory()->create();
 
-        $fromDate = '2021-10-05';
-        $toDate   = '2021-10-06';
+        $fromDate = now()->addDay(2)->toDateString();
+        $toDate   = now()->addDay(20)->toDateString();
 
         $office = Office::factory()->create();
 
         Reservation::factory()->for($office)->create([
-            'start_date' => '2021-10-01',
-            'end_date'   => '2021-10-10',
+            'start_date' => now()->addDay(3)->toDateString(),
+            'end_date'   => now()->addDay(10)->toDateString(),
         ]);
 
 
@@ -285,14 +290,14 @@ class UserReservationControllerTest extends TestCase
 
         $user = User::factory()->create();
 
-        $fromDate = '2021-10-01';
-        $toDate   = '2021-10-30';
+        $fromDate = now()->addDay(2)->toDateString();
+        $toDate   = now()->addDay(20)->toDateString();
 
         $office = Office::factory()->create();
 
         Reservation::factory()->for($office)->create([
-            'start_date' => '2021-10-05',
-            'end_date'   => '2021-10-10',
+            'start_date' => now()->addDay(10)->toDateString(),
+            'end_date'   => now()->addDay(30)->toDateString(),
         ]);
 
 
@@ -319,14 +324,15 @@ class UserReservationControllerTest extends TestCase
 
         $user = User::factory()->create();
 
-        $fromDate = '2021-10-01';
-        $toDate   = '2021-10-06';
+        $fromDate = now()->addDay(2)->toDateString();
+        $toDate   = now()->addDay(30)->toDateString();
+
 
         $office = Office::factory()->create();
 
         Reservation::factory()->for($office)->create([
-            'start_date' => '2021-10-05',
-            'end_date'   => '2021-10-10',
+            'start_date' => now()->addDay(10)->toDateString(),
+            'end_date'   => now()->addDay(15)->toDateString(),
         ]);
 
 
@@ -344,4 +350,205 @@ class UserReservationControllerTest extends TestCase
                  ->assertJsonValidationErrors(['office_id' => 'You cannot make reservation during  this time.']);
 
       }
+      /**
+       * @test
+      */
+      public function cannot_make_reservation_on_a_pending_office()
+      {
+        // $this->withoutExceptionHandling();
+
+        $user = User::factory()->create();
+
+        $fromDate = now()->addDay(10)->toDateString();
+        $toDate   = now()->addDay(15)->toDateString();
+
+
+        $office = Office::factory()->create(['approval_status' => Office::APPROVAL_PENDING]);
+
+        $this->actingAs($user);
+
+        $response = $this->postJson(route('api.reservation.create'), [
+          'office_id'  => $office->id,
+          'start_date' => $fromDate,
+          'end_date'   => $toDate,
+        ]);
+
+        // dd($response->json());
+
+        $response->assertUnprocessable()
+                 ->assertJsonValidationErrors(['office_id' => 'You cannot make reservation on a pending or hidden office.']);
+
+      }
+      /**
+       * @test
+      */
+      public function cannot_make_reservation_on_an_hidden_office()
+      {
+        // $this->withoutExceptionHandling();
+
+        $user = User::factory()->create();
+
+        $fromDate = now()->addDay(10)->toDateString();
+        $toDate   = now()->addDay(15)->toDateString();
+
+
+        $office = Office::factory()->create(['hidden' => true]);
+
+        $this->actingAs($user);
+
+        $response = $this->postJson(route('api.reservation.create'), [
+          'office_id'  => $office->id,
+          'start_date' => $fromDate,
+          'end_date'   => $toDate,
+        ]);
+
+        // dd($response->json());
+
+        $response->assertUnprocessable()
+                 ->assertJsonValidationErrors(['office_id' => 'You cannot make reservation on a pending or hidden office.']);
+
+      }
+
+      /**
+       * @test
+       */
+      public function cannot_make_reservation_less_than_2_days()
+      {
+          $user = User::factory()->create();
+
+          $office = Office::factory()->create();
+
+          $this->actingAs($user);
+
+          $response = $this->postJson(route('api.reservation.create'), [
+              'office_id' => $office->id,
+              'start_date' => now()->addDay(),
+              'end_date' => now()->addDay(),
+          ]);
+
+          $response->assertUnprocessable()
+              ->assertJsonValidationErrors(['end_date' => 'The end date must be a date after start date.']);
+      }
+
+      /**
+       * @test
+       */
+      public function cannot_make_reservation_on_same_day()
+      {
+          $user = User::factory()->create();
+
+          $office = Office::factory()->create();
+
+          $this->actingAs($user);
+
+          $response = $this->postJson(route('api.reservation.create'), [
+              'office_id' => $office->id,
+              'start_date' => now()->toDateString(),
+              'end_date' => now()->addDays(3)->toDateString(),
+          ]);
+
+          $response->assertUnprocessable()
+              ->assertJsonValidationErrors(['start_date' => 'The start date must be a date after today.']);
+      }
+
+      /**
+       * @test
+       */
+      public function can_make_reservation_for_2_days()
+      {
+          $user = User::factory()->create();
+
+          $office = Office::factory()->create();
+
+          $this->actingAs($user);
+
+          $response = $this->postJson(route('api.reservation.create'), [
+              'office_id' => $office->id,
+              'start_date' => now()->addDay(),
+              'end_date' => now()->addDays(2),
+          ]);
+
+          // dd($response->json());
+
+          $response->assertCreated();
+      }
+
+
+    /**
+     * @test
+     */
+    public function send_notifications_on_new_reservation()
+    {
+        Notification::fake();
+
+        $user = User::factory()->create();
+
+        $office = Office::factory()->create();
+
+        $this->actingAs($user);
+
+        $response = $this->postJson(route('api.reservation.create'), [
+            'office_id' => $office->id,
+            'start_date' => now()->addDay(),
+            'end_date' => now()->addDays(2),
+        ]);
+
+        Notification::assertSentTo($user, NewUserReservationNotification::class);
+        Notification::assertSentTo($office->user, NewHostReservationNotification::class);
+
+        $response->assertCreated();
+    }
+
+    /**
+     * @test
+     */
+    public function can_cancel_a_reservation()
+    {
+      $user = User::factory()->create();
+
+      $office = Office::factory()->create();
+
+      $this->actingAs($user);
+
+      $reservation = Reservation::factory()
+                                ->for($office)
+                                ->for($user)
+                                ->create([
+                                  'start_date' => now()->addDays(8)->toDateString(),
+                                  'end_date'   => now()->addDays(15)->toDateString(),
+                                ]);
+      $response = $this->deleteJson(route('api.reservation.cancel', [$reservation->id]));
+
+      $response->assertOk()
+               ->assertJsonPath('data.id', $reservation->id)
+               ->assertJsonPath('data.user_id', $user->id)
+               ->assertJsonPath('data.status', Reservation::STATUS_CANCELLED);
+
+    }
+
+    /**
+     * @test
+     */
+    public function cannot_cancel_a_reservation_in_less_than_24h_before_start_time()
+    {
+      $user = User::factory()->create();
+
+      $office = Office::factory()->create();
+
+      $this->actingAs($user);
+
+      $reservation = Reservation::factory()
+                                ->for($office)
+                                ->for($user)
+                                ->create([
+                                  'start_date' => now()->addDays(1)->toDateString(),
+                                  'end_date'   => now()->addDays(4)->toDateString(),
+                                ]);
+      $response = $this->deleteJson(route('api.reservation.cancel', [$reservation->id]));
+
+      $response->assertUnprocessable()
+              ->assertJsonValidationErrors(['reservation' => 'You cannot cancel reservation 1 day prior to start.']);
+
+    }
+
 }

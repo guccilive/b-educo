@@ -26,7 +26,7 @@ class OfficeImageController extends Controller
         'image' => ['file', 'max:5000', 'mimes:jpg,png']
       ]);
 
-      $path = request()->file('image')->storePublicly('/');
+      $path = request()->file('image')->storePublicly('/upload/images', ['disk' => 'public']);
 
       $image = $office->images()->create([
         'path' => $path,

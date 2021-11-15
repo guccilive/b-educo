@@ -36,6 +36,7 @@ Route::DELETE('/offices/{office}/images/{image:id}', [\App\Http\Controllers\API\
 // User Reservations
 Route::GET('/reservations', [\App\Http\Controllers\API\UserReservationController::class,'index'])->middleware(['auth:sanctum', 'verified']);
 Route::POST('/reservations', [\App\Http\Controllers\API\UserReservationController::class,'create'])->name('api.reservation.create')->middleware(['auth:sanctum', 'verified']);
+Route::delete('/reservations/cancel/{reservation}', [\App\Http\Controllers\API\UserReservationController::class,'cancel'])->name('api.reservation.cancel')->middleware(['auth:sanctum', 'verified']);
 
 // Host Reservations
 Route::GET('/host/reservations', [\App\Http\Controllers\API\HostReservationController::class,'index'])->middleware(['auth:sanctum', 'verified']);

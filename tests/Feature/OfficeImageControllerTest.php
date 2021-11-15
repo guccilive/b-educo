@@ -19,6 +19,7 @@ class OfficeImageControllerTest extends TestCase
      */
     public function test_uploade_office_image()
     {
+        $this->withoutExceptionHandling();
 
         Storage::fake();
 
@@ -35,9 +36,7 @@ class OfficeImageControllerTest extends TestCase
 
         $response->assertCreated();
 
-        Storage::assertExists([
-          $response->json('data.path')
-        ]);
+        Storage::assertExists($response->json('data.path'));
     }
 
     /**
@@ -45,6 +44,8 @@ class OfficeImageControllerTest extends TestCase
      */
     public function test_delete_an_office_image()
     {
+        // $this->withoutExceptionHandling();
+
         Storage::put('Office_Image.png', 'empty');
 
         $user = User::factory()->create();
